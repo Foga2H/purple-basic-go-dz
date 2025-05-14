@@ -13,3 +13,13 @@ func main() {
 
 	fmt.Printf("RUB: %.2f\n", rubAmount)
 }
+
+func readUserInput() string {
+	var result string
+	fmt.Scan(&result)
+	return result
+}
+
+func calculateCurrency(amount float64, fromCurrency string, toCurrency string) float64 {
+
+}
