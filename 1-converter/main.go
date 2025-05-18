@@ -26,8 +26,8 @@ func main() {
 			continue
 		}
 
-		result, err := calculateCurrency(fromCurrency, toCurrency, amount, &currencyMap)
-		if err != nil {
+		result, error2 := calculateCurrency(fromCurrency, toCurrency, amount, &currencyMap)
+		if error2 != nil {
 			fmt.Println(err)
 			continue
 		}
