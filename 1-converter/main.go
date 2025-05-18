@@ -28,7 +28,7 @@ func main() {
 
 		result, error2 := calculateCurrency(fromCurrency, toCurrency, amount, &currencyMap)
 		if error2 != nil {
-			fmt.Println(err)
+			fmt.Println(error2)
 			continue
 		}
 
@@ -45,16 +45,18 @@ func outputResult(fromCurrency string, toCurrency string, result float64) {
 func getUserInput() (string, float64, string, error) {
 	var fromCurrency, toCurrency string
 	var amount float64
+	var validAmount float64
 
 	fmt.Print("Введите исходную валюту (USD, EUR, RUB): ")
 	fmt.Scan(&fromCurrency)
 	validFromCurrency := strings.ToUpper(fromCurrency)
 	fmt.Print("Введите число: ")
 	fmt.Scan(&amount)
-	validAmount, err := checkUserAmount(amount)
+	checkAmount, err := checkUserAmount(amount)
 	if err != nil {
 		return "", 0, "", err
 	}
+	validAmount = checkAmount
 	fmt.Print("Введите целевую валюту: ")
 	fmt.Scan(&toCurrency)
 	validToCurrency := strings.ToUpper(toCurrency)
@@ -67,13 +69,13 @@ func getUserInput() (string, float64, string, error) {
 	return strings.ToUpper(validFromCurrency), validAmount, strings.ToUpper(validToCurrency), nil
 }
 
-func checkUserCurrencies(toCurrency string, fromCurrency string) error {
+func checkUserCurrencies(fromCurrency string, toCurrency string) error {
 	if toCurrency != "EUR" && toCurrency != "RUB" && toCurrency != "USD" {
-		return errors.New("некорректная исходная валюта")
+		return errors.New("некорректная целевая валюта")
 	}
 
 	if fromCurrency != "EUR" && fromCurrency != "RUB" && fromCurrency != "USD" {
-		return errors.New("некорректная целевая валюта")
+		return errors.New("некорректная исходная валюта")
 	}
 
 	if toCurrency == fromCurrency {
@@ -92,6 +94,7 @@ func checkUserAmount(amount float64) (float64, error) {
 
 func calculateCurrency(fromCurrency string, toCurrency string, amount float64, currencyMap *map[string]float64) (float64, error) {
 	var mapIndex string
+	var usdAmount float64
 
 	if toCurrency == "USD" {
 		mapIndex = fromCurrency
@@ -110,10 +113,11 @@ func calculateCurrency(fromCurrency string, toCurrency string, amount float64, c
 		return amount / coefficient, nil
 	}
 
-	usdAmount := amount
-
 	if fromCurrency != "USD" {
-		usdAmount = amount / coefficient
+		usdAmount = amount * coefficient
+		coefficient = currencyMapValue[fromCurrency]
+	} else {
+		usdAmount = amount
 	}
 
 	return usdAmount * coefficient, nil
