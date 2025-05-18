@@ -10,13 +10,18 @@ func main() {
 	fmt.Println("__Калькулятор валют__")
 
 	for {
+		currencyMap := map[string]float64{
+			"EUR": 0.9,   // Из USD в EUR
+			"RUB": 81.07, // Из USD в RUB
+		}
+
 		fromCurrency, amount, toCurrency, err := getUserInput()
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
-		result, err := calculateCurrency(fromCurrency, toCurrency, amount)
+		result, err := calculateCurrency(fromCurrency, toCurrency, amount, &currencyMap)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -76,11 +81,7 @@ func checkUserAmount(amount float64) (float64, error) {
 	return amount, nil
 }
 
-func calculateCurrency(fromCurrency string, toCurrency string, amount float64) (float64, error) {
-	currencyMap := map[string]float64{
-		"EUR": 0.9,   // Из USD в EUR
-		"RUB": 81.07, // Из USD в RUB
-	}
+func calculateCurrency(fromCurrency string, toCurrency string, amount float64, currencyMap *map[string]float64) (float64, error) {
 	var mapIndex string
 
 	if toCurrency == "USD" {
@@ -89,8 +90,9 @@ func calculateCurrency(fromCurrency string, toCurrency string, amount float64) (
 		mapIndex = toCurrency
 	}
 
-	coefficient, ok := currencyMap[mapIndex]
-	fmt.Println(currencyMap, fromCurrency, toCurrency)
+	currencyMapValue := *currencyMap
+	coefficient, ok := currencyMapValue[mapIndex]
+	fmt.Println(currencyMapValue, fromCurrency, toCurrency)
 	if !ok {
 		return 0.0, errors.New("не найдена валюта")
 	}
