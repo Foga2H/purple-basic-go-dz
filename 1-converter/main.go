@@ -3,10 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
-
-const EUR float64 = 0.9
-const RUB float64 = 81.07
 
 func main() {
 	fmt.Println("__Калькулятор валют__")
@@ -18,7 +16,12 @@ func main() {
 			continue
 		}
 
-		result := calculateCurrency(fromCurrency, toCurrency, amount)
+		result, err := calculateCurrency(fromCurrency, toCurrency, amount)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
 		outputResult(fromCurrency, toCurrency, result)
 		break
 	}
@@ -26,7 +29,7 @@ func main() {
 
 func outputResult(fromCurrency string, toCurrency string, result float64) {
 	fmt.Println("Результаты: ")
-	fmt.Printf("%s -> %s = %f\n", fromCurrency, toCurrency, result)
+	fmt.Printf("%s -> %s = %.2f\n", fromCurrency, toCurrency, result)
 }
 
 func getUserInput() (string, float64, string, error) {
@@ -35,7 +38,7 @@ func getUserInput() (string, float64, string, error) {
 
 	fmt.Print("Введите исходную валюту (USD, EUR, RUB): ")
 	fmt.Scan(&fromCurrency)
-	validFromCurrency, err := checkUserCurrency(fromCurrency)
+	validFromCurrency, err := checkUserCurrency(strings.ToUpper(fromCurrency))
 	if err != nil {
 		return "", 0, "", err
 	}
@@ -47,7 +50,7 @@ func getUserInput() (string, float64, string, error) {
 	}
 	fmt.Print("Введите целевую валюту: ")
 	fmt.Scan(&toCurrency)
-	validToCurrency, err := checkUserCurrency(toCurrency)
+	validToCurrency, err := checkUserCurrency(strings.ToUpper(toCurrency))
 	if err != nil {
 		return "", 0, "", err
 	}
@@ -56,7 +59,7 @@ func getUserInput() (string, float64, string, error) {
 		return "", 0, "", errors.New("валюты не должны совпадать")
 	}
 
-	return validFromCurrency, validAmount, validToCurrency, nil
+	return strings.ToUpper(validFromCurrency), validAmount, strings.ToUpper(validToCurrency), nil
 }
 
 func checkUserCurrency(currency string) (string, error) {
@@ -73,45 +76,34 @@ func checkUserAmount(amount float64) (float64, error) {
 	return amount, nil
 }
 
-func calculateCurrency(fromCurrency string, toCurrency string, amount float64) float64 {
-	var result float64
+func calculateCurrency(fromCurrency string, toCurrency string, amount float64) (float64, error) {
+	currencyMap := map[string]float64{
+		"EUR": 0.9,   // Из USD в EUR
+		"RUB": 81.07, // Из USD в RUB
+	}
+	var mapIndex string
 
-	switch fromCurrency {
-	case "USD":
-		if toCurrency == "EUR" {
-			result = amount * EUR
-			break
-		}
-
-		if toCurrency == "RUB" {
-			result = amount * RUB
-			break
-		}
-	case "EUR":
-		usdAmount := amount / EUR
-
-		if toCurrency == "USD" {
-			result = usdAmount
-			break
-		}
-
-		if toCurrency == "RUB" {
-			result = usdAmount * RUB
-			break
-		}
-	case "RUB":
-		usdAmount := amount / RUB
-
-		if toCurrency == "USD" {
-			result = usdAmount
-			break
-		}
-
-		if toCurrency == "EUR" {
-			result = usdAmount * EUR
-			break
-		}
+	if toCurrency == "USD" {
+		mapIndex = fromCurrency
+	} else {
+		mapIndex = toCurrency
 	}
 
-	return result
+	coefficient, ok := currencyMap[mapIndex]
+	fmt.Println(currencyMap, fromCurrency, toCurrency)
+	if !ok {
+		return 0.0, errors.New("не найдена валюта")
+	}
+
+	if toCurrency == "USD" {
+		return amount / coefficient, nil
+	}
+
+	usdAmount := amount
+
+	if fromCurrency != "USD" {
+		usdAmount = amount / coefficient
+	}
+
+	return usdAmount * coefficient, nil
 }
