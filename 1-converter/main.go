@@ -10,12 +10,17 @@ func main() {
 	fmt.Println("__Калькулятор валют__")
 
 	for {
+		var fromCurrency string
+		var toCurrency string
+		var amount float64
+		var err error
+
 		currencyMap := map[string]float64{
 			"EUR": 0.9,   // Из USD в EUR
 			"RUB": 81.07, // Из USD в RUB
 		}
 
-		fromCurrency, amount, toCurrency, err := getUserInput()
+		fromCurrency, amount, toCurrency, err = getUserInput()
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -43,10 +48,7 @@ func getUserInput() (string, float64, string, error) {
 
 	fmt.Print("Введите исходную валюту (USD, EUR, RUB): ")
 	fmt.Scan(&fromCurrency)
-	validFromCurrency, err := checkUserCurrency(strings.ToUpper(fromCurrency))
-	if err != nil {
-		return "", 0, "", err
-	}
+	validFromCurrency := strings.ToUpper(fromCurrency)
 	fmt.Print("Введите число: ")
 	fmt.Scan(&amount)
 	validAmount, err := checkUserAmount(amount)
@@ -55,23 +57,30 @@ func getUserInput() (string, float64, string, error) {
 	}
 	fmt.Print("Введите целевую валюту: ")
 	fmt.Scan(&toCurrency)
-	validToCurrency, err := checkUserCurrency(strings.ToUpper(toCurrency))
+	validToCurrency := strings.ToUpper(toCurrency)
+
+	err = checkUserCurrencies(validFromCurrency, validToCurrency)
 	if err != nil {
 		return "", 0, "", err
-	}
-
-	if validFromCurrency == validToCurrency {
-		return "", 0, "", errors.New("валюты не должны совпадать")
 	}
 
 	return strings.ToUpper(validFromCurrency), validAmount, strings.ToUpper(validToCurrency), nil
 }
 
-func checkUserCurrency(currency string) (string, error) {
-	if currency != "EUR" && currency != "RUB" && currency != "USD" {
-		return "", errors.New("некорректная валюта")
+func checkUserCurrencies(toCurrency string, fromCurrency string) error {
+	if toCurrency != "EUR" && toCurrency != "RUB" && toCurrency != "USD" {
+		return errors.New("некорректная исходная валюта")
 	}
-	return currency, nil
+
+	if fromCurrency != "EUR" && fromCurrency != "RUB" && fromCurrency != "USD" {
+		return errors.New("некорректная целевая валюта")
+	}
+
+	if toCurrency == fromCurrency {
+		return errors.New("валюты не должны совпадать")
+	}
+
+	return nil
 }
 
 func checkUserAmount(amount float64) (float64, error) {
