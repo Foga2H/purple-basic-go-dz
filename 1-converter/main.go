@@ -3,22 +3,30 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
-
-const EUR float64 = 0.9
-const RUB float64 = 81.07
 
 func main() {
 	fmt.Println("__Калькулятор валют__")
 
 	for {
+		currencyMap := map[string]float64{
+			"EUR": 0.9,   // Из USD в EUR
+			"RUB": 81.07, // Из USD в RUB
+		}
+
 		fromCurrency, amount, toCurrency, err := getUserInput()
 		if err != nil {
 			fmt.Println(err)
-			continue
+			break
 		}
 
-		result := calculateCurrency(fromCurrency, toCurrency, amount)
+		result, err2 := calculateCurrency(fromCurrency, toCurrency, amount, &currencyMap)
+		if err2 != nil {
+			fmt.Println(err2)
+			break
+		}
+
 		outputResult(fromCurrency, toCurrency, result)
 		break
 	}
@@ -26,7 +34,7 @@ func main() {
 
 func outputResult(fromCurrency string, toCurrency string, result float64) {
 	fmt.Println("Результаты: ")
-	fmt.Printf("%s -> %s = %f\n", fromCurrency, toCurrency, result)
+	fmt.Printf("%s -> %s = %.2f\n", fromCurrency, toCurrency, result)
 }
 
 func getUserInput() (string, float64, string, error) {
@@ -35,83 +43,65 @@ func getUserInput() (string, float64, string, error) {
 
 	fmt.Print("Введите исходную валюту (USD, EUR, RUB): ")
 	fmt.Scan(&fromCurrency)
-	validFromCurrency, err := checkUserCurrency(fromCurrency)
-	if err != nil {
-		return "", 0, "", err
-	}
+	fromCurrency = strings.ToUpper(fromCurrency)
 	fmt.Print("Введите число: ")
-	fmt.Scan(&amount)
-	validAmount, err := checkUserAmount(amount)
+	_, err := fmt.Scanf("%f", &amount)
 	if err != nil {
-		return "", 0, "", err
+		return "", 0.0, "", errors.New("invalid input")
 	}
 	fmt.Print("Введите целевую валюту: ")
 	fmt.Scan(&toCurrency)
-	validToCurrency, err := checkUserCurrency(toCurrency)
-	if err != nil {
-		return "", 0, "", err
+	toCurrency = strings.ToUpper(toCurrency)
+
+	isValid := checkUserCurrencyInput(fromCurrency, toCurrency)
+	if !isValid {
+		return fromCurrency, amount, toCurrency, errors.New("incorrect user currency input")
 	}
 
-	if validFromCurrency == validToCurrency {
-		return "", 0, "", errors.New("валюты не должны совпадать")
-	}
-
-	return validFromCurrency, validAmount, validToCurrency, nil
+	return fromCurrency, amount, toCurrency, nil
 }
 
-func checkUserCurrency(currency string) (string, error) {
-	if currency != "EUR" && currency != "RUB" && currency != "USD" {
-		return "", errors.New("некорректная валюта")
+func checkUserCurrencyInput(fromCurrency string, toCurrency string) bool {
+	if fromCurrency == toCurrency {
+		return false
 	}
-	return currency, nil
+
+	if fromCurrency != "USD" && fromCurrency != "EUR" && fromCurrency != "RUB" {
+		return false
+	}
+
+	if toCurrency != "USD" && toCurrency != "EUR" && toCurrency != "RUB" {
+		return false
+	}
+
+	return true
 }
 
-func checkUserAmount(amount float64) (float64, error) {
-	if amount <= 0 {
-		return 0, errors.New("некорректное число")
-	}
-	return amount, nil
-}
-
-func calculateCurrency(fromCurrency string, toCurrency string, amount float64) float64 {
-	var result float64
-
-	switch fromCurrency {
-	case "USD":
-		if toCurrency == "EUR" {
-			result = amount * EUR
-			break
+func calculateCurrency(fromCurrency string, toCurrency string, amount float64, currencyMap *map[string]float64) (float64, error) {
+	if fromCurrency == "USD" {
+		coefficient, ok := (*currencyMap)[toCurrency]
+		if !ok {
+			return 0.0, errors.New("incorrect user currency input")
 		}
 
-		if toCurrency == "RUB" {
-			result = amount * RUB
-			break
-		}
-	case "EUR":
-		usdAmount := amount / EUR
+		fmt.Println(coefficient, toCurrency, amount)
 
-		if toCurrency == "USD" {
-			result = usdAmount
-			break
-		}
-
-		if toCurrency == "RUB" {
-			result = usdAmount * RUB
-			break
-		}
-	case "RUB":
-		usdAmount := amount / RUB
-
-		if toCurrency == "USD" {
-			result = usdAmount
-			break
-		}
-
-		if toCurrency == "EUR" {
-			result = usdAmount * EUR
-			break
-		}
+		return amount * coefficient, nil
 	}
 
-	return result
+	fromCurrencyCoefficient, ok := (*currencyMap)[fromCurrency]
+	if !ok {
+		return 0.0, errors.New("incorrect user currency input")
+	}
+
+	usdAmount := amount / fromCurrencyCoefficient
+	if toCurrency == "USD" {
+		return usdAmount, nil
+	}
+
+	toCurrencyCoefficient, ok := (*currencyMap)[toCurrency]
+	if !ok {
+		return 0.0, errors.New("incorrect user currency input")
+	}
+	return usdAmount * toCurrencyCoefficient, nil
 }
