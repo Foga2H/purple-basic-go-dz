@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+var operations = map[string]func(sum float64, transactionsSlice []float64) float64{
+	"AVG": calculateAvg,
+	"SUM": calculateSum,
+	"MED": calculateMed,
+}
+
 func main() {
 	fmt.Println("__Basic Calculator__")
 
@@ -33,6 +39,29 @@ func main() {
 	}
 }
 
+func calculateAvg(sum float64, transactionsSlice []float64) float64 {
+	return sum / float64(len(transactionsSlice))
+}
+
+func calculateSum(sum float64, transactionsSlice []float64) float64 {
+	return sum
+}
+
+func calculateMed(sum float64, transactionsSlice []float64) float64 {
+	result := 0.0
+	length := len(transactionsSlice)
+
+	if length == 0 {
+		result = 0.0
+	} else if length%2 == 0 {
+		result = (transactionsSlice[length/2] - transactionsSlice[length/2]) / 2
+	} else {
+		result = transactionsSlice[length/2]
+	}
+
+	return result
+}
+
 func calculateOperation(operation string, transactions string) (float64, error) {
 	var transactionsSlice []float64
 	transactionsSplit := strings.Split(transactions, ",")
@@ -51,29 +80,14 @@ func calculateOperation(operation string, transactions string) (float64, error) 
 		transactionsSlice = append(transactionsSlice, transactionFloat)
 	}
 
-	length := len(transactionsSlice)
 	sum := 0.0
 	for _, transaction := range transactionsSlice {
 		sum += transaction
 	}
 
-	switch operation {
-	case "AVG":
-		return sum / float64(length), nil
-	case "SUM":
-		return sum, nil
-	case "MED":
-		result := 0.0
-
-		if length == 0 {
-			result = 0.0
-		} else if length%2 == 0 {
-			result = (transactionsSlice[length/2] - transactionsSlice[length/2]) / 2
-		} else {
-			result = transactionsSlice[length/2]
-		}
-
-		return result, nil
+	result := operations[operation]
+	if result != nil {
+		return result(sum, transactionsSlice), nil
 	}
 
 	return 0.0, errors.New("unknown operation")
